@@ -5,12 +5,6 @@ import java.time.*;
 
 public class GestionPersonnel {
 
-
-    private static final String TYPE_DEVELOPPEUR = "DEVELOPPEUR";
-    private static final String TYPE_CHEF_DE_PROJET = "CHEF DE PROJET";
-    private static final String TYPE_STAGIAIRE = "STAGIAIRE";
-
-
     public ArrayList<Object[]> employes = new ArrayList<>();
     public HashMap<String, Double> salairesEmployes = new HashMap<>();
     public ArrayList<String> logs = new ArrayList<>();
@@ -33,7 +27,11 @@ public class GestionPersonnel {
     public void ajouteSalarie(String type, String nom, double salaireDeBase, int experience, String equipe) {
         Object[] emp = new Object[6];
         emp[0] = UUID.randomUUID().toString();
-        emp[1] = type;
+
+
+        TypeEmploye typeEmploye = TypeEmploye.fromString(type);
+        emp[1] = typeEmploye;
+
         emp[2] = nom;
         emp[3] = salaireDeBase;
         emp[4] = experience;
@@ -42,18 +40,26 @@ public class GestionPersonnel {
         employes.add(emp);
 
         double salaireFinal = salaireDeBase;
-        if (type.equals(TYPE_DEVELOPPEUR)) {
-            salaireFinal = salaireDeBase * 1.2;
-            if (experience > 5) {
-                salaireFinal = salaireFinal * 1.15;
-            }
-        } else if (type.equals(TYPE_CHEF_DE_PROJET)) {
-            salaireFinal = salaireDeBase * 1.5;
-            if (experience > 3) {
-                salaireFinal = salaireFinal * 1.1;
-            }
-        } else if (type.equals(TYPE_STAGIAIRE)) {
-            salaireFinal = salaireDeBase * 0.6;
+        switch (typeEmploye) {
+            case DEVELOPPEUR:
+                salaireFinal = salaireDeBase * 1.2;
+                if (experience > 5) {
+                    salaireFinal = salaireFinal * 1.15;
+                }
+                break;
+            case CHEF_DE_PROJET:
+                salaireFinal = salaireDeBase * 1.5;
+                if (experience > 3) {
+                    salaireFinal = salaireFinal * 1.1;
+                }
+                break;
+            case STAGIAIRE:
+                salaireFinal = salaireDeBase * 0.6;
+                break;
+            case AUTRE:
+            default:
+
+                break;
         }
 
         salairesEmployes.put((String) emp[0], salaireFinal);
@@ -69,31 +75,41 @@ public class GestionPersonnel {
             return 0;
         }
 
-        String type = (String) emp[1];
+        TypeEmploye type = (TypeEmploye) emp[1];
         double salaireDeBase = (double) emp[3];
         int experience = (int) emp[4];
 
         double salaireFinal = salaireDeBase;
-        if (TYPE_DEVELOPPEUR.equals(type)) {
-            salaireFinal = salaireDeBase * 1.2;
-            if (experience > 5) {
-                salaireFinal = salaireFinal * 1.15;
-            }
-            if (experience > 10) {
-                salaireFinal = salaireFinal * 1.05;
-            }
-        } else if (TYPE_CHEF_DE_PROJET.equals(type)) {
-            salaireFinal = salaireDeBase * 1.5;
-            if (experience > 3) {
-                salaireFinal = salaireFinal * 1.1;
-            }
-            salaireFinal = salaireFinal + 5000;
-        } else if (TYPE_STAGIAIRE.equals(type)) {
-            salaireFinal = salaireDeBase * 0.6;
+        switch (type) {
+            case DEVELOPPEUR:
+                salaireFinal = salaireDeBase * 1.2;
+                if (experience > 5) {
+                    salaireFinal = salaireFinal * 1.15;
+                }
+                if (experience > 10) {
+                    salaireFinal = salaireFinal * 1.05; // bonus
+                }
+                break;
 
-        } else {
-            salaireFinal = salaireDeBase;
+            case CHEF_DE_PROJET:
+                salaireFinal = salaireDeBase * 1.5;
+                if (experience > 3) {
+                    salaireFinal = salaireFinal * 1.1;
+                }
+                salaireFinal = salaireFinal + 5000; // bonus
+                break;
+
+            case STAGIAIRE:
+                salaireFinal = salaireDeBase * 0.6;
+                // Pas de bonus pour les stagiaires
+                break;
+
+            case AUTRE:
+            default:
+                // salaireFinal = salaireDeBase;
+                break;
         }
+
         return salaireFinal;
     }
 
@@ -136,7 +152,9 @@ public class GestionPersonnel {
         Object[] emp = findEmployeById(employeId);
 
         if (emp != null) {
-            emp[1] = newType;
+            // 🔸 On convertit aussi le nouveau type vers l'enum
+            TypeEmploye nouveauType = TypeEmploye.fromString(newType);
+            emp[1] = nouveauType;
 
             double nouveauSalaire = calculSalaire(employeId);
             salairesEmployes.put(employeId, nouveauSalaire);
@@ -169,24 +187,33 @@ public class GestionPersonnel {
         Object[] emp = findEmployeById(employeId);
         if (emp == null) return 0;
 
-        String type = (String) emp[1];
+        TypeEmploye type = (TypeEmploye) emp[1];
         int experience = (int) emp[4];
         double salaireDeBase = (double) emp[3];
 
         double bonus = 0;
-        if (TYPE_DEVELOPPEUR.equals(type)) {
-            bonus = salaireDeBase * 0.1;
-            if (experience > 5) {
-                bonus = bonus * 1.5;
-            }
-        } else if (TYPE_CHEF_DE_PROJET.equals(type)) {
-            bonus = salaireDeBase * 0.2;
-            if (experience > 3) {
-                bonus = bonus * 1.3;
-            }
-        } else if (TYPE_STAGIAIRE.equals(type)) {
-            bonus = 0;
+        switch (type) {
+            case DEVELOPPEUR:
+                bonus = salaireDeBase * 0.1;
+                if (experience > 5) {
+                    bonus = bonus * 1.5;
+                }
+                break;
+
+            case CHEF_DE_PROJET:
+                bonus = salaireDeBase * 0.2;
+                if (experience > 3) {
+                    bonus = bonus * 1.3;
+                }
+                break;
+
+            case STAGIAIRE:
+            case AUTRE:
+            default:
+                // bonus = 0
+                break;
         }
+
         return bonus;
     }
 }

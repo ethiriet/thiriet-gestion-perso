@@ -215,7 +215,8 @@ public class GestionPersonnelTest {
         }
 
 
-        assertEquals("DEVELOPPEUR", emp[1]);
+        assertTrue(emp[1] instanceof TypeEmploye);
+        assertEquals(TypeEmploye.DEVELOPPEUR, emp[1]);
 
 
         double salaireCalcule = gestion.calculSalaire(id);
