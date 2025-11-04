@@ -5,10 +5,20 @@ import java.time.*;
 
 public class GestionPersonnel {
 
-    // On tape maintenant sur Employe, pas sur Object[]
     public ArrayList<Employe> employes = new ArrayList<>();
     public HashMap<String, Double> salairesEmployes = new HashMap<>();
     public ArrayList<String> logs = new ArrayList<>();
+
+    // 🔹 Stratégies de rémunération par type
+    private final Map<TypeEmploye, RemunerationStrategy> remunerationStrategies = new HashMap<>();
+
+    public GestionPersonnel() {
+        // initialisation des stratégies
+        remunerationStrategies.put(TypeEmploye.DEVELOPPEUR, new DeveloppeurRemunerationStrategy());
+        remunerationStrategies.put(TypeEmploye.CHEF_DE_PROJET, new ChefDeProjetRemunerationStrategy());
+        remunerationStrategies.put(TypeEmploye.STAGIAIRE, new StagiaireRemunerationStrategy());
+        remunerationStrategies.put(TypeEmploye.AUTRE, new AutreRemunerationStrategy());
+    }
 
     // 🔹 Méthode utilitaire : trouver un employé par son id
     private Employe findEmployeById(String employeId) {
@@ -25,6 +35,15 @@ public class GestionPersonnel {
         logs.add(LocalDateTime.now() + " - " + message);
     }
 
+    // 🔹 Récupération de la stratégie associée au type
+    private RemunerationStrategy getStrategy(TypeEmploye typeEmploye) {
+        RemunerationStrategy strategy = remunerationStrategies.get(typeEmploye);
+        if (strategy == null) {
+            strategy = remunerationStrategies.get(TypeEmploye.AUTRE);
+        }
+        return strategy;
+    }
+
     public void ajouteSalarie(String type, String nom, double salaireDeBase, int experience, String equipe) {
         String id = UUID.randomUUID().toString();
         TypeEmploye typeEmploye = TypeEmploye.fromString(type);
@@ -32,6 +51,7 @@ public class GestionPersonnel {
         Employe emp = new Employe(id, typeEmploye, nom, salaireDeBase, experience, equipe);
         employes.add(emp);
 
+        // ⚠ On conserve le comportement original de ajouteSalarie
         double salaireFinal = salaireDeBase;
         switch (typeEmploye) {
             case DEVELOPPEUR:
@@ -68,42 +88,8 @@ public class GestionPersonnel {
             return 0;
         }
 
-        TypeEmploye type = emp.getType();
-        double salaireDeBase = emp.getSalaireDeBase();
-        int experience = emp.getExperience();
-
-        double salaireFinal = salaireDeBase;
-        switch (type) {
-            case DEVELOPPEUR:
-                salaireFinal = salaireDeBase * 1.2;
-                if (experience > 5) {
-                    salaireFinal = salaireFinal * 1.15;
-                }
-                if (experience > 10) {
-                    salaireFinal = salaireFinal * 1.05; // bonus
-                }
-                break;
-
-            case CHEF_DE_PROJET:
-                salaireFinal = salaireDeBase * 1.5;
-                if (experience > 3) {
-                    salaireFinal = salaireFinal * 1.1;
-                }
-                salaireFinal = salaireFinal + 5000; // bonus
-                break;
-
-            case STAGIAIRE:
-                salaireFinal = salaireDeBase * 0.6;
-                // Pas de bonus pour les stagiaires
-                break;
-
-            case AUTRE:
-            default:
-                // salaireFinal = salaireDeBase;
-                break;
-        }
-
-        return salaireFinal;
+        RemunerationStrategy strategy = getStrategy(emp.getType());
+        return strategy.calculSalaire(emp);
     }
 
     public void generationRapport(String typeRapport, String filtre) {
@@ -179,33 +165,7 @@ public class GestionPersonnel {
         Employe emp = findEmployeById(employeId);
         if (emp == null) return 0;
 
-        TypeEmploye type = emp.getType();
-        int experience = emp.getExperience();
-        double salaireDeBase = emp.getSalaireDeBase();
-
-        double bonus = 0;
-        switch (type) {
-            case DEVELOPPEUR:
-                bonus = salaireDeBase * 0.1;
-                if (experience > 5) {
-                    bonus = bonus * 1.5;
-                }
-                break;
-
-            case CHEF_DE_PROJET:
-                bonus = salaireDeBase * 0.2;
-                if (experience > 3) {
-                    bonus = bonus * 1.3;
-                }
-                break;
-
-            case STAGIAIRE:
-            case AUTRE:
-            default:
-                // bonus = 0
-                break;
-        }
-
-        return bonus;
+        RemunerationStrategy strategy = getStrategy(emp.getType());
+        return strategy.calculBonusAnnuel(emp);
     }
 }
