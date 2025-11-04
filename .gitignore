@@ -19,3 +19,13 @@ out/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Dossier de build (fichiers compilés, classes, jar, etc.)
+build/
+
+# Fichiers temporaires Gradle
+.gradle/
+
+# IDEs
+.vscode/
+
